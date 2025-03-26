@@ -1,52 +1,85 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-const mongoose= require('mongoose');
+require("dotenv").config(); // Load .env variables at the very top
+var createError = require("http-errors");
+var express = require("express");
+var path = require("path");
+var cookieParser = require("cookie-parser");
+var logger = require("morgan");
+var cors = require("cors");
+const mongoose = require("mongoose");
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-const searchRoutes= require('./routes/searchRoutes')
+// Initialize Express app
 var app = express();
- require('dotenv').config();
 
- //mongodb connection 
+// Load environment variables
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const MONGO_URI = process.env.MONGO_URI;
 
- const mongoURI = process.env.MONGO_URI; // Fetch from .env
- mongoose
-  .connect(mongoURI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+// Validate essential environment variables
+if (!RAPIDAPI_KEY) {
+  console.error("❌ RAPIDAPI_KEY is missing in .env file!");
+  process.exit(1);
+}
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI is missing in .env file!");
+  process.exit(1);
+}
 
+console.log("✅ RAPIDAPI_KEY Loaded");
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+// MongoDB Connection with Auto-Reconnect
+mongoose
+  .connect(MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
 
-app.use(logger('dev'));
+// Handle MongoDB disconnection
+mongoose.connection.on("disconnected", () => {
+  console.warn("⚠️ MongoDB disconnected. Reconnecting...");
+  mongoose.connect(MONGO_URI);
+});
+
+// Graceful shutdown for MongoDB
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("🔌 MongoDB connection closed. Exiting...");
+  process.exit(0);
+});
+
+// Import routes
+var indexRouter = require("./routes/index");
+var usersRouter = require("./routes/users");
+const searchRoutes = require("./routes/searchRoutes");
+
+// Middleware setup
+app.use(logger("dev"));
+app.use(cors()); // Enable CORS for frontend integration
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/api', searchRoutes);
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+// View engine setup
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "pug");
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// Define Routes
+app.use("/", indexRouter);
+app.use("/users", usersRouter);
+app.use("/api", searchRoutes);
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+// Catch 404 and forward to error handler
+app.use((req, res, next) => next(createError(404)));
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err.message);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    error: req.app.get("env") === "development" ? err : {},
+  });
 });
 
 module.exports = app;
