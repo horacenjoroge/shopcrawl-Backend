@@ -6,8 +6,12 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+<<<<<<< HEAD:ShopCrawl/package.json
+    "axios": "^1.8.4",
+=======
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
+>>>>>>> 6d91a14d64fb061cacffdbe001a40148e23bd3dd:package.json
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",
