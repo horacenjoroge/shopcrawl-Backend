@@ -167,6 +167,23 @@ router.put('/:id/role', async (req, res) => {
   }
 });
 
+// Get users by role
+router.get('/role/:role', async (req, res) => {
+  try {
+      const { role } = req.params;
+      const validRoles = ['user', 'admin'];
+
+      if (!validRoles.includes(role)) {
+          return res.status(400).json({ message: 'Invalid role' });
+      }
+
+      const users = await User.find({ role }).select('-password'); // Exclude passwords
+
+      res.json(users);
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
 
 
 
