@@ -40,6 +40,26 @@ router.get('/', async (req, res) => {
 });
 
 
+// Update user profile
+router.put('/:id', async (req, res) => {
+  try {
+      const { username, email } = req.body;
+      const updatedUser = await User.findByIdAndUpdate(
+          req.params.id,
+          { username, email },
+          { new: true, runValidators: true }
+      ).select('-password'); // Exclude password from response
+
+      if (!updatedUser) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json(updatedUser);
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 
 /* GET users listing. */
