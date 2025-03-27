@@ -1,5 +1,5 @@
 const SearchQuery = require("../models/SearchQuery");
-const SearchHistory = require("../models/SearchHistory");
+const SearchHistory = require("../models/searchHistory");
 const SearchResponse = require("../models/SearchResponse");
 
 // Save Search Query in MongoDB
@@ -61,6 +61,5 @@ const saveSearchResponse = async (query, products) => {
 
 module.exports = {
   saveSearchQuery,
-  saveSearchHistory,
-  saveSearchResponse,
+
 };

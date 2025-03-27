@@ -5,8 +5,11 @@ const fetchProductDetails = require("../utils/fetchProductDetails");
 const fetchProductReviews = require("../utils/fetchProductReviews");
 const fetchProductOffers = require("../utils/fetchProductOffers");
 const fetchProductsByCategory = require("../utils/fetchProductsByCategory");
+const { saveSearchQuery, saveSearchHistory, saveSearchResponse } = require("../controllers/searchController");
 
-// Search for products
+
+
+//  Search for products
 router.get("/search", async (req, res) => {
   try {
     const query = (req.query.q || "").trim();
@@ -14,19 +17,23 @@ router.get("/search", async (req, res) => {
 
     if (!query) return res.status(400).json({ message: "Query is required" });
 
-    console.log("🔍 Searching:", query, "| Page:", page);
+    console.log(" Searching:", query, "| Page:", page);
 
     const products = await fetchProducts(query, page);
-    console.log("📦 Products Found:", products.length);
+    console.log(" Products Found:", products.length);
+
+    // Save search query and response to the database
+    await saveSearchQuery(query);
+    await saveSearchResponse(query, products);
 
     res.json({ query, page, products });
   } catch (error) {
-    console.error("❌ Error in search:", error);
+    console.error(" Error in search:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
-// Fetch products by category
+//  Fetch products by category
 router.get("/category", async (req, res) => {
   try {
     const category = req.query.category || "";
@@ -44,37 +51,37 @@ router.get("/category", async (req, res) => {
   }
 });
 
-// Fetch product details
+//  Fetch product details
 router.get("/product", async (req, res) => {
   try {
     const productId = req.query.id;
     if (!productId) return res.status(400).json({ message: "Product ID is required" });
 
-    console.log("📜 Fetching product details for ID:", productId);
+    console.log(" Fetching product details for ID:", productId);
     const productDetails = await fetchProductDetails(productId);
     res.json(productDetails);
   } catch (error) {
-    console.error("❌ Error fetching product details:", error);
+    console.error(" Error fetching product details:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
-// Fetch product reviews
+//  Fetch product reviews
 router.get("/reviews", async (req, res) => {
   try {
     const productId = req.query.id;
     if (!productId) return res.status(400).json({ message: "Product ID is required" });
 
-    console.log("📝 Fetching reviews for product ID:", productId);
+    console.log(" Fetching reviews for product ID:", productId);
     const reviews = await fetchProductReviews(productId);
     res.json(reviews);
   } catch (error) {
-    console.error("❌ Error fetching reviews:", error);
+    console.error(" Error fetching reviews:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
-// Fetch product offers
+//  Fetch product offers
 router.get("/offers", async (req, res) => {
   try {
     const productId = req.query.id;
@@ -84,7 +91,21 @@ router.get("/offers", async (req, res) => {
     const offers = await fetchProductOffers(productId);
     res.json(offers);
   } catch (error) {
-    console.error("❌ Error fetching offers:", error);
+    console.error(" Error fetching offers:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+//  Save user search history (Authenticated Users)
+router.post("/history",  async (req, res) => {
+  try {
+    const { userId, query } = req.body;
+    if (!userId || !query) return res.status(400).json({ message: "User ID and query are required" });
+
+    await saveSearchHistory(userId, query);
+    res.status(200).json({ message: "Search history saved successfully" });
+  } catch (error) {
+    console.error(" Error saving search history:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
