@@ -1,54 +1,39 @@
-const SearchQuery = require('../models/SearchQuery');
+const mongoose = require('mongoose');
 
-async function saveSearchQuery(query, userId = null) {
-  try {
-    const newSearch = new SearchQuery({ query, userId });
-    await newSearch.save();
-    console.log(" Search query saved:", query);
-  } catch (error) {
-    console.error(" Error saving search query:", error);
+// Individual search entry schema
+const SearchEntrySchema = new mongoose.Schema({
+  query: { 
+    type: String, 
+    required: true 
+  },
+  timestamp: { 
+    type: Date, 
+    default: Date.now 
+  },
+  imageUrl: { 
+    type: String, 
+    default: null 
+  },
+  category: {
+    type: String,
+    default: null
   }
-}
+});
 
+// Main search history schema
+const SearchHistorySchema = new mongoose.Schema({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true,
+    index: true  // Add index for faster queries
+  },
+  searches: [SearchEntrySchema]
+}, {
+  timestamps: true  // Adds createdAt and updatedAt fields automatically
+});
 
+// Add index on timestamp for faster time-based queries
+SearchHistorySchema.index({ 'searches.timestamp': -1 });
 
-// history
-const SearchHistory = require('../models/SearchHistory');
-
-async function saveSearchHistory(userId, query) {
-  try {
-    let history = await SearchHistory.findOne({ userId });
-
-    if (!history) {
-      history = new SearchHistory({ userId, searches: [] });
-    }
-
-    history.searches.push({ query });
-    await history.save();
-    console.log(" Search history updated:", query);
-  } catch (error) {
-    console.error(" Error saving search history:", error);
-  }
-}
-
-// search response
-
-const SearchResponse = require('../models/SearchResponse');
-
-async function saveSearchResponse(query, products) {
-  try {
-    const newResponse = new SearchResponse({ query, products });
-    await newResponse.save();
-    console.log(" Search response saved for:", query);
-  } catch (error) {
-    console.error("Error saving search response:", error);
-  }
-}
-
-
-
-module.exports = {
-    saveSearchQuery,
-    saveSearchHistory,
-    saveSearchResponse
-}
+module.exports = mongoose.model('SearchHistory', SearchHistorySchema);
