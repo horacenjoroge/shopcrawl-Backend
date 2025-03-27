@@ -141,6 +141,33 @@ router.put('/:id/reactivate', async (req, res) => {
   }
 });
 
+// Update user role (Admin only)
+router.put('/:id/role', async (req, res) => {
+  try {
+      const { role } = req.body;
+      const validRoles = ['user', 'admin'];
+
+      if (!validRoles.includes(role)) {
+          return res.status(400).json({ message: 'Invalid role' });
+      }
+
+      const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { role },
+          { new: true }
+      ).select('-password'); // Exclude password from response
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({ message: `User role updated to ${role}` });
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 
 /* GET users listing. */
