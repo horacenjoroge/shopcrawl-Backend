@@ -1,92 +1,60 @@
-const express = require("express");
-const router = express.Router();
-const fetchProducts = require("../utils/fetchProducts");
-const fetchProductDetails = require("../utils/fetchProductDetails");
-const fetchProductReviews = require("../utils/fetchProductReviews");
-const fetchProductOffers = require("../utils/fetchProductOffers");
-const fetchProductsByCategory = require("../utils/fetchProductsByCategory");
-
-// Search for products
-router.get("/search", async (req, res) => {
+// In your search route handler
+router.post('/search', auth, async (req, res) => {
   try {
-    const query = (req.query.q || "").trim();
-    const page = parseInt(req.query.page) || 1;
-
-    if (!query) return res.status(400).json({ message: "Query is required" });
-
-    console.log("🔍 Searching:", query, "| Page:", page);
-
-    const products = await fetchProducts(query, page);
-    console.log("📦 Products Found:", products.length);
-
-    res.json({ query, page, products });
-  } catch (error) {
-    console.error("❌ Error in search:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    const { query } = req.body;
+    const userId = req.user.id; // From auth middleware
+    
+    // Perform the search operation using RapidAPI
+    const searchResults = await performRapidAPISearch(query);
+    
+    // Save the search query to history
+    const newSearchHistory = new SearchHistory({
+      userId,
+      query,
+      timestamp: new Date(),
+      // Extract an image URL from the RapidAPI results, if available
+      imageUrl: extractImageFromResults(searchResults)
+    });
+    
+    await newSearchHistory.save();
+    
+    // Return search results
+    res.json(searchResults);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
   }
 });
 
-// Fetch products by category
-router.get("/category", async (req, res) => {
+// Function to perform search via RapidAPI
+async function performRapidAPISearch(query) {
   try {
-    const category = req.query.category || "";
-    const page = parseInt(req.query.page) || 1;
-
-    if (!category) return res.status(400).json({ message: "Category is required" });
-
-    console.log("📂 Fetching products in category:", category, "| Page:", page);
-
-    const products = await fetchProductsByCategory(category, page);
-    res.json({ category, page, products });
+    const response = await axios({
+      method: 'GET',
+      url: 'https://api.example.com/search', // Replace with your RapidAPI endpoint
+      headers: {
+        'x-rapidapi-host': 'api.example.com',
+        'x-rapidapi-key': process.env.RAPIDAPI_KEY
+      },
+      params: {
+        q: query,
+        // Add any other parameters required by the API
+      }
+    });
+    
+    return response.data;
   } catch (error) {
-    console.error("❌ Error fetching category:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('RapidAPI search error:', error);
+    throw error;
   }
-});
+}
 
-// Fetch product details
-router.get("/product", async (req, res) => {
-  try {
-    const productId = req.query.id;
-    if (!productId) return res.status(400).json({ message: "Product ID is required" });
-
-    console.log("📜 Fetching product details for ID:", productId);
-    const productDetails = await fetchProductDetails(productId);
-    res.json(productDetails);
-  } catch (error) {
-    console.error("❌ Error fetching product details:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+// Function to extract an image URL from search results
+function extractImageFromResults(results) {
+  // This will depend on the structure of your RapidAPI response
+  // Example:
+  if (results && results.items && results.items.length > 0 && results.items[0].image) {
+    return results.items[0].image.url;
   }
-});
-
-// Fetch product reviews
-router.get("/reviews", async (req, res) => {
-  try {
-    const productId = req.query.id;
-    if (!productId) return res.status(400).json({ message: "Product ID is required" });
-
-    console.log("📝 Fetching reviews for product ID:", productId);
-    const reviews = await fetchProductReviews(productId);
-    res.json(reviews);
-  } catch (error) {
-    console.error("❌ Error fetching reviews:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-// Fetch product offers
-router.get("/offers", async (req, res) => {
-  try {
-    const productId = req.query.id;
-    if (!productId) return res.status(400).json({ message: "Product ID is required" });
-
-    console.log("🎯 Fetching offers for product ID:", productId);
-    const offers = await fetchProductOffers(productId);
-    res.json(offers);
-  } catch (error) {
-    console.error("❌ Error fetching offers:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-module.exports = router;
+  return null;
+}
