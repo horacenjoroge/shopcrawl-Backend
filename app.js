@@ -1,61 +1,24 @@
-require("dotenv").config(); // Load .env variables at the very top
-const createError = require("http-errors");
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const logger = require("morgan");
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+
+
+// Load environment variables
+require("dotenv").config();
+
+// CORS
 const cors = require("cors");
 const mongoose = require("mongoose");
 
-// Initialize Express app
-const app = express();
+//routes
 
-// Load environment variables
-const { RAPIDAPI_KEY, MONGO_URI } = process.env;
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var authRouter = require('./routes/auth');
 
-// Validate essential environment variables
-if (!RAPIDAPI_KEY) {
-  console.error(" RAPIDAPI_KEY is missing in .env file!");
-  process.exit(1);
-}
-if (!MONGO_URI) {
-  console.error(" MONGO_URI is missing in .env file!");
-  process.exit(1);
-}
-
-console.log(" RAPIDAPI_KEY Loaded");
-
-// MongoDB Connection with Auto-Reconnect
-mongoose
-  .connect(MONGO_URI) // Removed deprecated options
-  .then(() => console.log(" MongoDB connected successfully"))
-  .catch((err) => {
-    console.error(" MongoDB connection error:", err);
-    process.exit(1);
-  });
-
-// Handle MongoDB disconnection
-mongoose.connection.on("disconnected", async () => {
-  console.warn(" MongoDB disconnected. Reconnecting...");
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log(" MongoDB reconnected.");
-  } catch (err) {
-    console.error(" Reconnection failed:", err);
-  }
-});
-
-// Graceful shutdown for MongoDB
-process.on("SIGINT", async () => {
-  await mongoose.connection.close();
-  console.log("🔌 MongoDB connection closed. Exiting...");
-  process.exit(0);
-});
-
-// Import routes
-const indexRouter = require("./routes/index");
-const usersRouter = require("./routes/users");
-const searchRoutes = require("./routes/searchRoutes");
+var app = express();
 
 // Middleware setup
 app.use(logger("dev"));
@@ -63,27 +26,49 @@ app.use(cors()); // Enable CORS for frontend integration
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
-
-// View engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "pug");
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors()); // FIX: Move CORS setup here
 
 // Routes
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
-app.use("/api", searchRoutes);
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+app.use('/api/auth', authRouter);
+
 
 // Catch 404 and forward to error handler
-app.use((req, res, next) => next(createError(404)));
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  console.error(" Server Error:", err.message);
-  res.status(err.status || 500).json({
-    message: err.message || "Internal Server Error",
-    error: req.app.get("env") === "development" ? err : {},
-  });
+app.use(function(req, res, next) {
+  next(createError(404));
 });
+
+// Error handler
+// app.use(function(err, req, res, next) {
+//   res.locals.message = err.message;
+//   res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+//   res.status(err.status || 500);
+//   res.render('error');
+// });
+
+
+// error handler
+app.use(function(err, req, res, next) {
+  res.status(err.status || 500).json({ error: err.message });
+});
+
+// Connect to MongoDB
+mongoose.connect(
+  process.env.MONGO_URI,
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    dbName: "ShopCrawl"
+  }
+)
+.then(() => console.log(' MongoDB Connected'))
+.catch(err => console.log(' MongoDB Connection Error:', err));
+
+if (require.main === module) {
+  app.listen(5000, () => console.log(' Server running on port 5000'));
+}
 
 module.exports = app;

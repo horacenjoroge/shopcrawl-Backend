@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const SearchQuerySchema = new mongoose.Schema({
@@ -10,3 +11,4 @@ const SearchQuerySchema = new mongoose.Schema({
 SearchQuerySchema.index({ query: 1, userId: 1 });
 
 module.exports = mongoose.model("SearchQuery", SearchQuerySchema);
+
