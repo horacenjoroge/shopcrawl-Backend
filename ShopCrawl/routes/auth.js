@@ -22,7 +22,11 @@ router.post('/register', async (req, res) => {
       // Generate JWT Token
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
   
+<<<<<<< HEAD
+      res.status(201).json({ msg: 'User created successfully', token, user: { _id: user._id, email: user.email } });
+=======
       res.status(201).json({ msg: 'User created successfully', token, userId: user._id });
+>>>>>>> benny/feature/auth-jwt-develop
     } catch (err) {
       console.error(err);
       res.status(500).json({ msg: 'Server Error' });
@@ -58,4 +62,8 @@ router.get('/', function (req, res, next) {
   res.send('respond with a resource');
 });
 
+<<<<<<< HEAD
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> benny/feature/auth-jwt-develop
