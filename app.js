@@ -58,8 +58,13 @@ app.use(function(err, req, res, next) {
 // Connect to MongoDB
 console.log("Connecting to MongoDB...");
 mongoose.connect(process.env.MONGO_URI, { dbName: "ShopCrawl" })
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .then(() => console.log(' MongoDB Connected'))
+  .catch(err => console.error('MongoDB Connection Error:', err));
+
+  if (require.main === module) {
+    app.listen(3000, () => console.log(' Server running on port 3000'));
+  }
+  
 
 
 
