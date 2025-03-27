@@ -4,6 +4,7 @@ var router = express.Router();
 
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { logoutUser } = require('../middleware/auth');
 
 
 
@@ -206,6 +207,31 @@ router.put('/:id/change-password', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+  
+
+///user logout
+// Temporary in-memory blacklist (for now)
+const blacklist = new Set();
+
+// Logout Route (No Middleware)
+router.post('/logout', (req, res) => {
+  const authHeader = req.header('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(400).json({ msg: 'No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  // Add token to blacklist
+  blacklist.add(token);
+  console.log('🚫 Token Blacklisted:', token);
+
+  res.json({ msg: 'Logged out successfully' });
+});
+
+// Function to check if a token is blacklisted (Use this in protected routes)
+const isTokenBlacklisted = (token) => blacklist.has(token);
 
 
 
