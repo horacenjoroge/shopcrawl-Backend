@@ -103,6 +103,45 @@ router.put('/:id/password', async (req, res) => {
   }
 });
 
+// Deactivate user account
+router.put('/:id/deactivate', async (req, res) => {
+  try {
+      const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { isActive: false },
+          { new: true }
+      ).select('-password'); // Exclude password from response
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({ message: 'User account deactivated successfully' });
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Reactivate user account
+router.put('/:id/reactivate', async (req, res) => {
+  try {
+      const user = await User.findByIdAndUpdate(
+          req.params.id,
+          { isActive: true },
+          { new: true }
+      ).select('-password'); // Exclude password from response
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({ message: 'User account reactivated successfully' });
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
