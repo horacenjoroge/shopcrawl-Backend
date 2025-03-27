@@ -75,6 +75,35 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Change user password
+router.put('/:id/password', async (req, res) => {
+  try {
+      const { oldPassword, newPassword } = req.body;
+
+      // Find user by ID
+      const user = await User.findById(req.params.id);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Check if old password is correct
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+          return res.status(400).json({ message: 'Incorrect old password' });
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+      await user.save();
+
+      res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 /* GET users listing. */
 router.get('/', function (req, res, next) {
   res.send('respond with a resource');
