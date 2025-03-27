@@ -5,15 +5,7 @@ var router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
-// Get User Profile
-router.get('/profile', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server Error' });
-  }
-});
+
 
 // Get user profile by ID
 router.get('/:id', async (req, res) => {
@@ -183,6 +175,36 @@ router.get('/role/:role', async (req, res) => {
   } catch (error) {
       res.status(500).json({ message: 'Server error' });
   }
+});
+
+const bcrypt = require('bcryptjs');
+
+// Change user password
+router.put('/:id/change-password', async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        // Find user by ID
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if old password matches
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Incorrect old password' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 
