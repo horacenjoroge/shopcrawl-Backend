@@ -21,8 +21,8 @@ router.post('/register', async (req, res) => {
   
       // Generate JWT Token
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-      res.status(201).json({ msg: 'User created successfully', token, user: { _id: user._id, email: user.email } });
+     res.status(201).json({ msg: 'User created successfully', token, user: { _id: user._id, email: user.email } });
+
     } catch (err) {
       console.error(err);
       res.status(500).json({ msg: 'Server Error' });
@@ -59,3 +59,4 @@ router.get('/', function (req, res, next) {
 });
 
 module.exports = router;
+
