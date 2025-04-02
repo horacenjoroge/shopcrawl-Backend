@@ -1,14 +1,20 @@
 const mongoose = require('mongoose');
 
-// Individual search entry schema
-const SearchEntrySchema = new mongoose.Schema({
+const HistorySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true  // Good for query performance
+  },
   query: { 
     type: String, 
     required: true 
   },
   timestamp: { 
     type: Date, 
-    default: Date.now 
+    default: Date.now,
+    index: true  // Good for sorting by date
   },
   imageUrl: { 
     type: String, 
@@ -18,22 +24,8 @@ const SearchEntrySchema = new mongoose.Schema({
     type: String,
     default: null
   }
-});
-
-// Main search history schema
-const SearchHistorySchema = new mongoose.Schema({
-  userId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true,
-    index: true  // Add index for faster queries
-  },
-  searches: [SearchEntrySchema]
 }, {
-  timestamps: true  // Adds createdAt and updatedAt fields automatically
+  timestamps: true  // Adds createdAt and updatedAt fields
 });
 
-// Add index on timestamp for faster time-based queries
-SearchHistorySchema.index({ 'searches.timestamp': -1 });
-
-module.exports = mongoose.model('SearchHistory', SearchHistorySchema);
+module.exports = mongoose.model('History', HistorySchema);
