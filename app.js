@@ -12,6 +12,8 @@ const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const searchRouter = require("./routes/searchRoutes"); // ✅ Import Search Route
+const historyRouter = require("./routes/history");
+ const savedRouter = require("./routes/saved"); // ✅ Import Saved Route
 
 const app = express();
 
@@ -37,7 +39,9 @@ console.log(`🌐 CORS enabled for: ${allowedOrigins}`);
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/history", historyRouter); // ✅ Add History Route
 app.use("/api/search", searchRouter); // ✅ Add Search Route
+app.use("/api/products", savedRouter); // ✅ Add Saved Route
 
 // 404 Handler
 app.use((req, res, next) => {
@@ -55,19 +59,32 @@ app.use((err, req, res, next) => {
 const connectDB = async () => {
   try {
     console.log("🛢️ Connecting to MongoDB...");
-    await mongoose.connect(process.env.MONGO_URI, { dbName: "ShopCrawl" });
+    await mongoose.connect(process.env.MONGO_URI, {
+      dbName: "ShopCrawl",
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000
+    });
     console.log("✅ MongoDB Connected!");
+    return true;  // Return success status
   } catch (err) {
     console.error("❌ MongoDB Connection Error:", err.message);
-    process.exit(1);
+    return false;  // Return failure status instead of exiting
   }
 };
+
+// Expose the connectDB function for bin/www
+app.connectDB = connectDB;
 
 // Start Server
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  connectDB().then(() => {
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  connectDB().then((connected) => {
+    if (connected) {
+      app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    } else {
+      process.exit(1);
+    }
   });
 }
 
