@@ -52,6 +52,40 @@ router.post('/register', async (req, res) => {
     }
   });
   
+  // Logout Route
+  router.post('/logout', auth, async (req, res) => {
+    try {
+      // In a real-world scenario, you might want to add the token to a blacklist 
+      // or implement a token revocation mechanism
+      // Since JWT is stateless, a common approach is to maintain a blacklist of revoked tokens
+      // Or use shorter expiration times and refresh tokens
+
+      res.status(200).json({ msg: 'Logged out successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ msg: 'Server Error' });
+    }
+  });
+
+  // Delete User Route
+  router.delete('/delete', auth, async (req, res) => {
+    try {
+      // Get user id from the authenticated request
+      const userId = req.user.userId;
+
+      // Delete the user
+      const deletedUser = await User.findByIdAndDelete(userId);
+      
+      if (!deletedUser) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+
+      res.status(200).json({ msg: 'User deleted successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ msg: 'Server Error' });
+    }
+  });
   
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -59,4 +93,3 @@ router.get('/', function (req, res, next) {
 });
 
 module.exports = router;
-
